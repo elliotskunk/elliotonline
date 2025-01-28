@@ -1,0 +1,23 @@
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="YOUR_API_KEY",
+    base_url="https://api.deepseek.com"
+)
+
+system_prompt = """
+Parse the input text into JSON with keys: item, price, date, location.
+EXAMPLE INPUT: Bought headphones for £10 at eboots today
+EXAMPLE OUTPUT: {"item": "headphones", "price": "£10", "date": "2025-01-27", "location": "eboots"}
+"""
+
+response = client.chat.completions.create(
+    model="deepseek-chat",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": "Bought headphones for £10 at eboots today"}
+    ],
+    response_format={"type": "json_object"}
+)
+
+print(response.choices[0].message.content)
