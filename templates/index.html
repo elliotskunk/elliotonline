@@ -3,7 +3,6 @@
 <head>
     <title>eBay Inventory Manager</title>
     <style>
-        /* Existing styles */
         .entry {
             border: 1px solid #ddd;
             padding: 15px;
@@ -56,7 +55,6 @@
             font-weight: bold;
         }
 
-        /* Update form styles */
         .form-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -70,8 +68,7 @@
             padding: 8px;
             margin: 5px 0;
         }
-        
-        /* Update result styles */
+
         .update-result {
             padding: 10px;
             margin: 15px 0;
@@ -115,12 +112,16 @@
                 <input type="text" name="box_label">
             </div>
             <div>
-                <label>Remaining Quantity:</label>
-                <input type="number" name="remaining_qty" min="0">
-            </div>
-            <div>
                 <label>Place Bought:</label>
                 <input type="text" name="place_bought">
+            </div>
+            <div>
+                <label>Restock Quantity:</label>
+                <input type="number" name="restock_qty" min="0">
+            </div>
+            <div>
+                <label>Quantity Sold:</label>
+                <input type="number" name="quantity_sold" min="0">
             </div>
         </div>
         <input type="submit" value="Update Entry">
@@ -139,46 +140,38 @@
             <div class="entry {% if entry.status == 'success' %}success{% elif entry.status == 'error' %}error{% endif %}">
                 <h3>
                     {% if entry.item %}{{ entry.item }}{% else %}Unparsed Entry{% endif %}
-                    <small style="font-size: 0.8em; color: #666">ID: {{ entry.unique_id }}</small>
+                    <small style="font-size: 0.8em; color: #666">ID: {{ entry.id }}</small>
                 </h3>
-                
-                {% if entry.status == 'success' %}
-                    <p class="success-message">✓ Successfully added to inventory</p>
-                {% elif entry.status == 'error' %}
-                    <p class="error-message">⚠️ Error: {{ entry.error }}</p>
-                {% endif %}
                 
                 <div class="entry-details">
                     <table>
                         <tr>
                             <th>Field</th>
                             <th>Value</th>
-                            <th>Status</th>
                         </tr>
                         <tr>
                             <td>Price</td>
                             <td>£{{ "%.2f"|format(entry.price) }}</td>
-                            <td>{% if entry.price <= 0 %}⚠️ Invalid{% else %}✓ Valid{% endif %}</td>
                         </tr>
                         <tr>
                             <td>Storage Location</td>
                             <td>{{ entry.storage_location }}</td>
-                            <td>{% if not entry.storage_location %}⚠️ Missing{% else %}✓ OK{% endif %}</td>
                         </tr>
                         <tr>
                             <td>Box Label</td>
                             <td>{{ entry.box_label }}</td>
-                            <td>{% if not entry.box_label %}⚠️ Missing{% else %}✓ OK{% endif %}</td>
                         </tr>
                         <tr>
-                            <td>Purchase Date</td>
+                            <td>Date</td>
                             <td>{{ entry.date }}</td>
-                            <td>{% if not entry.date %}⚠️ Missing{% else %}✓ OK{% endif %}</td>
                         </tr>
                         <tr>
-                            <td>Quantity</td>
+                            <td>Total Quantity</td>
                             <td>{{ entry.total_qty }}</td>
-                            <td>{% if entry.total_qty < 1 %}⚠️ Invalid{% else %}✓ Valid{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td>Remaining Quantity</td>
+                            <td>{{ entry.remaining_qty }}</td>
                         </tr>
                     </table>
                     
