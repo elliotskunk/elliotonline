@@ -1,138 +1,75 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eBay Inventory Manager</title>
-    <style>
-        .entry {
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 5px;
-        }
-        
-        .success {
-            background-color: #f0fff0;
-            border-color: #d0f0d0;
-        }
-        
-        .error {
-            background-color: #fff0f0;
-            border-color: #f0d0d0;
-        }
-        
-        .entry-details table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        
-        .entry-details th,
-        .entry-details td {
-            padding: 8px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-        
-        .entry-details th {
-            background-color: #f5f5f5;
-        }
-        
-        .validation-errors {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #fff8e1;
-            border: 1px solid #ffe082;
-            border-radius: 4px;
-        }
-        
-        .success-message {
-            color: #2e7d32;
-            font-weight: bold;
-        }
-        
-        .error-message {
-            color: #c62828;
-            font-weight: bold;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin: 15px 0;
-        }
-        
-        #updateForm input[type="text"],
-        #updateForm input[type="number"] {
-            width: 100%;
-            padding: 8px;
-            margin: 5px 0;
-        }
-
-        .update-result {
-            padding: 10px;
-            margin: 15px 0;
-            border-radius: 4px;
-        }
-        
-        .update-result.success {
-            background: #e8f5e9;
-            color: #2e7d32;
-            border: 1px solid #a5d6a7;
-        }
-        
-        .update-result.error {
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #ef9a9a;
-        }
+    <script src="{{ url_for('static', filename='js/voice_input.js') }}" defer></script>
     </style>
 </head>
 <body>
     <h1>Add New Item</h1>
     <form method="POST">
-        <textarea name="input_text" rows="4" cols="50" placeholder="Enter item details..."></textarea><br><br>
+        <textarea name="input_text" rows="4" cols="50" placeholder="Enter item details..."></textarea>
+        <button type="button" onclick="recordNewEntry()">🎤 Add via Voice</button>
+        <br><br>
         <input type="submit" value="Submit">
     </form>
 
+
     <h2>Update Existing Entry</h2>
     <form method="POST" id="updateForm">
-        <input type="text" name="update_id" placeholder="Entry ID" required>
+        <input type="text" name="update_id" placeholder="Entry ID (e.g. ITEM-1)">
+        <input type="text" name="update_item_name" placeholder="Item Name (e.g. T-Shirt)">
+        <button type="button" onclick="recordUpdateEntry()">🎤 Update via Voice</button>
+    
         <div class="form-grid">
-            <div>
-                <label>Catalogue Number:</label>
-                <input type="text" name="catalogue_number">
-            </div>
-            <div>
-                <label>Storage Location:</label>
-                <input type="text" name="storage_location">
-            </div>
-            <div>
-                <label>Box Label:</label>
-                <input type="text" name="box_label">
-            </div>
-            <div>
-                <label>Place Bought:</label>
-                <input type="text" name="place_bought">
-            </div>
-            <div>
-                <label>Restock Quantity:</label>
-                <input type="number" name="restock_qty" min="0">
-            </div>
-            <div>
-                <label>Quantity Sold:</label>
-                <input type="number" name="quantity_sold" min="0">
-            </div>
+            <label>Catalogue Number: <input type="text" name="catalogue_number"></label>
+            <label>Storage Location: <input type="text" name="storage_location"></label>
+            <label>Box Label: <input type="text" name="box_label"></label>
+            <label>Place Bought: <input type="text" name="place_bought"></label>
+            <label>Restock Quantity: <input type="number" name="restock_qty" min="0"></label>
+            <label>Quantity Sold: <input type="number" name="quantity_sold" min="0"></label>
         </div>
         <input type="submit" value="Update Entry">
     </form>
+    
 
+    <h2>Log a Sale</h2>
+    <form method="POST">
+        <input type="text" name="sales_item" placeholder="Exact item name" required>
+        <button type="button" onclick="recordSale()">🎤 Log Sale via Voice</button>
+        <br><br>
+        <label>Quantity Sold: <input type="number" name="quantity_sold" min="1" value="1"></label>
+        <label>Sold Price (GBP): <input type="text" name="sold_price" placeholder="e.g. 49.99"></label>
+        <label>Buyer Username: <input type="text" name="buyer" placeholder="buyer123"></label>
+        <label>Date Sold (DD/MM/YYYY): <input type="text" name="date_sold" placeholder="Leave blank for today"></label>
+        <input type="submit" value="Log Sale">
+    </form>
+    
     {% if update_result %}
     <div class="update-result {% if '✅' in update_result %}success{% else %}error{% endif %}">
         {{ update_result }}
     </div>
     {% endif %}
 
+    {% if suggested_matches %}
+    <h2>Multiple Matches Found</h2>
+    <form method="POST">
+        <label>Select the correct item:</label>
+        <select name="sales_item">
+            {% for match in suggested_matches %}
+                <option value="{{ match }}">{{ match }}</option>
+            {% endfor %}
+        </select>
+        <br><br>
+        <input type="submit" value="Confirm Selection">
+    </form>
+{% endif %}
+
+    
+
+    <!-- Processed Entries Section -->
     <h2>Processed Entries:</h2>
     {% if entries %}
     <div class="results">
@@ -142,50 +79,7 @@
                     {% if entry.item %}{{ entry.item }}{% else %}Unparsed Entry{% endif %}
                     <small style="font-size: 0.8em; color: #666">ID: {{ entry.id }}</small>
                 </h3>
-                
-                <div class="entry-details">
-                    <table>
-                        <tr>
-                            <th>Field</th>
-                            <th>Value</th>
-                        </tr>
-                        <tr>
-                            <td>Price</td>
-                            <td>£{{ "%.2f"|format(entry.price) }}</td>
-                        </tr>
-                        <tr>
-                            <td>Storage Location</td>
-                            <td>{{ entry.storage_location }}</td>
-                        </tr>
-                        <tr>
-                            <td>Box Label</td>
-                            <td>{{ entry.box_label }}</td>
-                        </tr>
-                        <tr>
-                            <td>Date</td>
-                            <td>{{ entry.date }}</td>
-                        </tr>
-                        <tr>
-                            <td>Total Quantity</td>
-                            <td>{{ entry.total_qty }}</td>
-                        </tr>
-                        <tr>
-                            <td>Remaining Quantity</td>
-                            <td>{{ entry.remaining_qty }}</td>
-                        </tr>
-                    </table>
-                    
-                    {% if entry.errors %}
-                        <div class="validation-errors">
-                            <strong>Validation Issues:</strong>
-                            <ul>
-                                {% for error in entry.errors %}
-                                    <li>{{ error }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
-                </div>
+                <!-- more details, etc. -->
             </div>
         {% endfor %}
     </div>
